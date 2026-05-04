@@ -1,69 +1,182 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-html, body { 
-    background-color: #541161; 
-    font-family: 'Poppins', sans-serif; 
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
+html { background-color: #541161; }
+body { 
+    font-family: 'Poppins', sans-serif; 
+    background-color: #541161; 
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .main-wrapper {
-    background-color: #f8fafc; 
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    background-color: #f8fafc; 
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Warna Utama Kedai Mococo */
-.bg-custom { background-color: #541161 !important; }
-.text-custom { color: #541161 !important; }
-.border-custom { border-color: #541161 !important; }
+.bg-custom { background-color: #541161; }
+.text-custom { color: #541161; }
+.border-custom { border-color: #541161; }
+.accent-custom { accent-color: #541161; }
 
-/* Navigasi & Halaman */
-.page { display: none; }
-.page.active { display: block; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.page { display: none; }
+.page.active { display: block; }
 
-/* Kategori Tab */
+.category-tab { transition: all 0.3s; }
 .category-tab.active {
-    background-color: #541161;
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(84, 17, 97, 0.3);
+    background-color: #541161;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgb(84 17 97 / 0.3);
 }
 
-/* Animasi & Hover */
-button, .min-w-\[280px\], .bg-white.p-3 {
-    transition: all 0.3s ease;
+#floating-cart {
+    transition: transform 0.3s ease-in-out, opacity 0.3s;
+}
+.hidden-cart {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
-button:active { transform: scale(0.95); }
 
-/* Modal Topping */
+/* Efek saat kursor lewat (Hover Effect) */
+/* Membuat tombol dan kartu sedikit membesar dan lebih terang */
+.min-w-\[280px\], 
+.bg-white.p-3.rounded-3xl, 
+button, 
+a.flex, 
+.bg-white\/10.p-3 {
+    transition: all 0.3s ease; /* Transisi halus */
+}
+
+.min-w-\[280px\]:hover, 
+.bg-white.p-3.rounded-3xl:hover, 
+button:hover, 
+a.flex:hover, 
+.bg-white\/10.p-3:hover {
+    transform: translateY(-5px) scale(1.02); /* Sedikit membesar & naik */
+    filter: brightness(1.1); /* Menjadi lebih terang */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1); /* Tambah bayangan halus */
+}
+
+.topping-option {
+    transition: all 0.2s ease;
+}
+
+/* Efek saat topping diklik */
+.topping-selected {
+    background-color: #541161 !important;
+    border-color: #541161 !important;
+    transform: scale(0.98);
+}
+
+.topping-selected span {
+    color: white !important;
+}
+
+/* Animasi masuk modal */
 #modal-topping:not(.hidden) .bg-white {
-    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    animation: slideUp 0.3s ease-out;
 }
 
 @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 
+.topping-option { transition: all 0.2s ease; }
+.topping-selected { 
+    background-color: #541161 !important; 
+    border-color: #541161 !important; 
+    color: white !important;
+}
+.qty-control {
+   display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 99px;
+}
+
+
+.topping-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.check-box {
+    transition: all 0.2s ease;
+}
+
+#modal-topping:not(.hidden) > div:last-child {
+    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+
+/* Perkecil Ukuran Modal Topping */
+#modal-topping .bg-white {
+    max-height: 75vh; /* Tidak memenuhi layar */
+    overflow-y: auto;
+    border-radius: 32px 32px 0 0;
+}
+
+/* Header Modal Ringkas */
+.modal-header-small {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.modal-img-small {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    object-cover: cover;
+}
+
+/* Style Tombol Topping Saat Dipilih */
 .topping-item.selected {
-    background-color: #541161 !important;
-    color: white !important;
-    border-color: #541161 !important;
+    background-color: #541161 !important;
+    border-color: #541161 !important;
 }
 
-/* Checkout Badge */
+
+.qty-control-main button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#menu-container > div {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Styling porsi di halaman checkout */
 .checkout-qty-badge {
-    min-width: 40px;
-    text-align: center;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-weight: 800;
-    color: #541161;
+    min-width: 40px;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-weight: 900;
+    color: #541161;
 }
