@@ -312,6 +312,37 @@ a.flex:hover,
     transform: scale(0.95) !important;
 }
 
+/* Khusus tampilan HP (Layar Kecil) */
+@media (max-width: 640px) {
+    /* Rapatkan jarak antar section di halaman pembayaran */
+    #page-pembayaran .p-6 {
+        padding: 1rem !important;
+    }
 
+    /* Kurangi jarak bawah agar tombol WA naik */
+    #checkout-list {
+        margin-bottom: 10px !important;
+    }
+
+    .space-y-6 > * + * {
+        margin-top: 1rem !important;
+    }
+
+    /* Biar teks gak kegedean di HP */
+    h2 { font-size: 1.25rem !important; }
+    
+    /* Tombol WA biar pas di jempol */
+    #page-pembayaran button {
+        margin-top: 5px !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+    }
+}
+
+/* Hilangkan margin bawah wrapper agar tidak ada ruang kosong raksasa */
+.main-wrapper {
+    min-height: auto !important;
+    padding-bottom: 80px; /* Ruang buat tombol melayang aja */
+}
 
 
