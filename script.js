@@ -31,7 +31,7 @@ const toppingOptions = [
     { id: 'cincau', nama: 'Cincau', harga: 2000, img: 'top-cincau.png' }
 ];
 
-// --- STATE UTAMA ---
+// --- STATE ---
 let keranjang = [];
 let itemTerpilih = null;
 let rasaTerpilih = '';
@@ -39,7 +39,7 @@ let toppingDipilih = [];
 let tipeMinuman = 'Susu';
 let tambahanBlender = 0;
 
-// --- RENDER MENU (HANYA JALAN SEKALI / GANTI KATEGORI) ---
+// --- FUNGSI UTAMA ---
 function renderMenu(filter = 'semua') {
     const container = document.getElementById('menu-container');
     if (!container) return;
@@ -48,9 +48,15 @@ function renderMenu(filter = 'semua') {
     const filtered = (filter === 'semua') ? menuData : menuData.filter(m => m.kategori === filter);
     
     filtered.forEach(item => {
-        // Ambil qty dari keranjang untuk item ini
-        const qty = keranjang.filter(k => k.id === item.id).length;
-        
+        const qtyTampil = keranjang.filter(k => k.id === item.id).length;
+        const aksiHTML = qtyTampil > 0 ? `
+            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
+                <button onclick="hapusSatuPorsi('${item.id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold">-</button>
+                <span class="text-xs font-black w-4 text-center text-slate-800">${qtyTampil}</span>
+                <button onclick="pilihProduk('${item.id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold">+</button>
+            </div>` 
+            : `<button onclick="pilihProduk('${item.id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md uppercase">+ PESAN</button>`;
+
         container.innerHTML += `
             <div class="flex bg-white p-3 rounded-[32px] shadow-sm border border-slate-100 items-center mb-3">
                 <img src="${item.img}" class="w-16 h-16 rounded-2xl object-cover">
@@ -58,53 +64,11 @@ function renderMenu(filter = 'semua') {
                     <h3 class="font-bold text-slate-800 text-sm leading-tight">${item.nama}</h3>
                     <p class="text-[11px] text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
                 </div>
-                <div class="flex items-center ml-2" id="aksi-${item.id}">
-                    ${renderTombolAksi(item.id, qty)}
-                </div>
+                <div class="flex items-center ml-2">${aksiHTML}</div>
             </div>`;
     });
 }
 
-// Fungsi pembantu untuk gambar tombol biar gak render ulang seluruh menu
-function renderTombolAksi(id, qty) {
-    if (qty > 0) {
-        return `
-            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
-                <button onclick="hapusSatuPorsi('${id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold">-</button>
-                <span class="text-xs font-black w-4 text-center text-slate-800">${qty}</span>
-                <button onclick="pilihProduk('${id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold">+</button>
-            </div>`;
-    } else {
-        return `<button onclick="pilihProduk('${id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md uppercase">+ PESAN</button>`;
-    }
-}
-
-// --- TAMBAH & HAPUS (TANPA KEDIP) ---
-function tambahKeKeranjang(nama, harga, img, id) {
-    keranjang.push({ id, nama, harga, img });
-    updateUI();
-    
-    // UPDATE HANYA TOMBOLNYA SAJA, GAK USAH RENDER ULANG SEMUA MENU
-    const targetAksi = document.getElementById(`aksi-${id}`);
-    if (targetAksi) {
-        const qty = keranjang.filter(k => k.id === id).length;
-        targetAksi.innerHTML = renderTombolAksi(id, qty);
-    }
-}
-
-function hapusSatuPorsi(id) {
-    const idx = keranjang.findLastIndex(k => k.id === id);
-    if (idx > -1) keranjang.splice(idx, 1);
-    updateUI();
-    
-    // UPDATE HANYA TOMBOLNYA SAJA
-    const targetAksi = document.getElementById(`aksi-${id}`);
-    if (targetAksi) {
-        const qty = keranjang.filter(k => k.id === id).length;
-        targetAksi.innerHTML = renderTombolAksi(id, qty);
-    }
-}
-// --- MODAL & TOPPING ---
 function pilihProduk(id) {
     itemTerpilih = menuData.find(m => m.id === id);
     if (!itemTerpilih) return;
@@ -114,6 +78,7 @@ function pilihProduk(id) {
         return;
     }
 
+    // Reset pilihan modal
     rasaTerpilih = '';
     toppingDipilih = [];
     tipeMinuman = 'Susu';
@@ -128,9 +93,9 @@ function pilihProduk(id) {
             <p class="text-[12px] text-slate-400 mt-1">Rp ${itemTerpilih.harga.toLocaleString('id-ID')}</p>
         </div>
 
-        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center tracking-widest text-slate-300">Tekstur Es:</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center tracking-widest">Tekstur Es:</p>
         <div class="flex justify-center mb-8">
-            <button onclick="toggleBlender(this)" class="tipe-btn w-full max-w-[220px] py-4 px-6 rounded-3xl bg-slate-100 text-slate-600 text-xs font-black flex items-center justify-center gap-3 transition-all border-none shadow-sm">
+            <button onclick="toggleBlender(this)" class="tipe-btn w-full max-w-[220px] py-4 px-6 rounded-3xl bg-slate-100 text-slate-600 text-xs font-black flex items-center justify-center gap-3 transition-all border-none">
                 <i class="fas fa-wind opacity-50"></i> Di Blender +1.000
             </button>
         </div>
@@ -138,14 +103,14 @@ function pilihProduk(id) {
         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Geser & Pilih Rasa:</p>
         <div class="rasa-scroll-wrapper" id="rasaWrapper">
             ${itemTerpilih.rasa.map(r => `
-                <div class="rasa-item p-2 rounded-[24px] border-2 border-slate-100 bg-white shadow-sm flex-shrink-0">
+                <button onclick="setRasaAktif(this, '${r.nama}')" class="rasa-item p-2 rounded-[24px] border-2 border-slate-100 bg-white shadow-sm flex-shrink-0">
                     <img src="${r.foto}" class="w-full h-24 object-cover rounded-[18px] mb-2 pointer-events-none">
                     <span class="text-[10px] font-black text-slate-700 uppercase">${r.nama}</span>
-                </div>
+                </button>
             `).join('')}
         </div>
 
-        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Topping Tambahan:</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Topping:</p>
         <div class="space-y-3 mb-6">
             ${toppingOptions.map(t => `
                 <div onclick="toggleTopping(this, '${t.id}', ${t.harga})" class="topping-item flex justify-between items-center p-3 rounded-2xl border-2 border-slate-100 cursor-pointer transition-all">
@@ -167,32 +132,7 @@ function pilihProduk(id) {
             Konfirmasi Pesanan
         </button>`;
     
-    // Aktifkan kembali deteksi scroll otomatis untuk varian rasa
     setTimeout(initScrollDetection, 100);
-}
-
-function initScrollDetection() {
-    const wrapper = document.getElementById('rasaWrapper');
-    if (!wrapper) return;
-
-    wrapper.addEventListener('scroll', () => {
-        const items = wrapper.querySelectorAll('.rasa-item');
-        const wrapperCenter = wrapper.getBoundingClientRect().left + (wrapper.offsetWidth / 2);
-        
-        items.forEach(item => {
-            const itemCenter = item.getBoundingClientRect().left + (item.getBoundingClientRect().width / 2);
-            // Jika item berada di tengah (jarak < 60px dari pusat)
-            if (Math.abs(wrapperCenter - itemCenter) < 60) {
-                item.classList.add('is-active');
-                rasaTerpilih = item.querySelector('span').innerText;
-            } else {
-                item.classList.remove('is-active');
-            }
-        });
-    });
-    
-    // Trigger scroll sedikit agar item pertama terdeteksi aktif
-    wrapper.scrollLeft = 1;
 }
 
 function toggleBlender(el) {
@@ -209,6 +149,12 @@ function toggleBlender(el) {
         el.classList.add('active');
     }
     updateTotalModal();
+}
+
+function setRasaAktif(el, nama) {
+    rasaTerpilih = nama;
+    document.querySelectorAll('.rasa-item').forEach(i => i.classList.remove('is-active'));
+    el.classList.add('is-active');
 }
 
 function toggleTopping(el, id, harga) {
@@ -236,7 +182,7 @@ function updateTotalModal() {
 }
 
 function konfirmasiKeKeranjang() {
-    if (!rasaTerpilih) return alert("Geser dan pilih rasa dulu ya!");
+    if (!rasaTerpilih) return alert("Pilih rasa dulu!");
     let namaFinal = `${itemTerpilih.nama} ${rasaTerpilih} (${tipeMinuman})`;
     let hargaFinal = itemTerpilih.harga + tambahanBlender;
     toppingDipilih.forEach(tid => {
@@ -250,28 +196,28 @@ function konfirmasiKeKeranjang() {
     renderMenu();
 }
 
-// --- NAVIGATION & UI ---
-function filterMenu(kat) {
-    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active', 'bg-custom', 'text-white'));
-    document.getElementById('tab-' + kat).classList.add('active', 'bg-custom', 'text-white');
-    renderMenu(kat);
-}
-
+// --- UTILS & UI ---
 function updateUI() {
     let total = keranjang.reduce((sum, item) => sum + item.harga, 0);
     const footerTotal = document.getElementById('footer-total');
     if (footerTotal) footerTotal.innerText = "Rp " + total.toLocaleString('id-ID');
     
     const floatingCart = document.getElementById('floating-cart');
-    // Cek halaman mana yang lagi aktif sekarang
     const isBeranda = document.getElementById('page-beranda').classList.contains('active');
-    
-    // Tombol CUMA boleh muncul di Beranda DAN kalau ada isinya
-    if (keranjang.length > 0 && isBeranda) {
-        floatingCart.classList.remove('hidden-cart');
-    } else {
-        floatingCart.classList.add('hidden-cart');
-    }
+    if (keranjang.length > 0 && isBeranda) floatingCart.classList.remove('hidden-cart');
+    else floatingCart.classList.add('hidden-cart');
+}
+
+function filterMenu(kat) {
+    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active', 'bg-custom', 'text-white'));
+    document.getElementById('tab-' + kat).classList.add('active', 'bg-custom', 'text-white');
+    renderMenu(kat);
+}
+
+function tambahKeKeranjang(nama, harga, img, id) {
+    keranjang.push({ id, nama, harga, img });
+    updateUI();
+    renderMenu();
 }
 
 function hapusSatuPorsi(id) {
@@ -281,69 +227,15 @@ function hapusSatuPorsi(id) {
     renderMenu();
 }
 
-function tambahKeKeranjang(nama, harga, img, id) {
-    keranjang.push({ id, nama, harga, img });
-    updateUI();
-    renderMenu();
-}
-
 function tutupModal() { document.getElementById('modal-topping').classList.add('hidden'); }
-// --- NAVIGASI HALAMAN (FIX JARAK & TOMBOL WA) ---
+
 function bukaHalaman(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const targetPage = document.getElementById('page-' + pageId);
-    if (targetPage) targetPage.classList.add('active');
-
-    if (pageId === 'pembayaran') {
-        document.getElementById('floating-cart').classList.add('hidden-cart');
-        renderCheckout();
-    } else {
-        updateUI();
-    }
+    document.getElementById('page-' + pageId).classList.add('active');
+    if (pageId === 'pembayaran') renderCheckout();
+    updateUI();
     window.scrollTo(0, 0);
 }
 
-function renderCheckout() {
-    const listContainer = document.getElementById('checkout-list');
-    if (!listContainer) return;
-    
-    listContainer.innerHTML = ''; // Kosongkan dulu sebelum isi baru
-    let total = 0;
-
-    if (keranjang.length === 0) {
-        listContainer.innerHTML = `<p class="text-center text-slate-400 py-10 text-xs">Keranjang kamu masih kosong.</p>`;
-        document.getElementById('pay-subtotal').innerText = "Rp 0";
-        document.getElementById('pay-total').innerText = "Rp 0";
-        return;
-    }
-
-    // Kelompokkan item yang sama biar rapi (misal: 2x Es Susu Oreo)
-    const ringkasan = keranjang.reduce((acc, item) => {
-        acc[item.nama] = acc[item.nama] || { ...item, qty: 0 };
-        acc[item.nama].qty++;
-        return acc;
-    }, {});
-
-    Object.values(ringkasan).forEach(item => {
-        const subtotalItem = item.harga * item.qty;
-        total += subtotalItem;
-        
-        listContainer.innerHTML += `
-            <div class="flex items-center bg-white p-4 rounded-[30px] shadow-sm border border-slate-100 mb-3">
-                <img src="${item.img}" class="w-14 h-14 rounded-2xl object-cover">
-                <div class="ml-4 flex-1">
-                    <h3 class="font-bold text-[11px] text-slate-800 leading-tight">${item.nama}</h3>
-                    <p class="text-xs text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
-                </div>
-                <div class="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                    <span class="text-xs font-black text-slate-700">${item.qty}x</span>
-                </div>
-            </div>`;
-    });
-
-    // Update angka total di bagian bawah halaman pembayaran
-    document.getElementById('pay-subtotal').innerText = "Rp " + total.toLocaleString('id-ID');
-    document.getElementById('pay-total').innerText = "Rp " + total.toLocaleString('id-ID');
-}
-
+// Inisialisasi awal
 document.addEventListener('DOMContentLoaded', () => renderMenu('semua'));
