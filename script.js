@@ -1,26 +1,276 @@
+// --- KONFIGURASI DATA ---
+const menuData = [
+    { 
+        id: 'es-susu', 
+        nama: 'Es Susu Mococo', 
+        harga: 15000, 
+        kategori: 'minuman', 
+        img: 'es-susu.png',
+        rasa: [
+            { nama: 'Oreo', foto: 'oreo-varian.png' },
+            { nama: 'Coklat', foto: 'coklat-varian.png' },
+            { nama: 'Matcha', foto: 'matcha-varian.png' },
+            { nama: 'Capucinno', foto: 'capucinno-varian.png' },
+            { nama: 'Dalgona Coffe', foto: 'dalgona-varian.png' },
+            { nama: 'Gula Aren', foto: 'gula-aren-varian.png' },
+            { nama: 'Butterscotch', foto: 'butterscotch-varian.png' }
+        ] 
+    },
+    { id: 'es-teh', nama: 'Es Teh Segar', harga: 5000, kategori: 'minuman', img: 'es-teh.png' },
+    { id: 'es-jeruk', nama: 'Es Jeruk Peras', harga: 7000, kategori: 'minuman', img: 'es-jeruk.png' },
+    { id: 'bowl', nama: 'Rice Bowl Ayam', harga: 25000, kategori: 'makanan', img: 'bowl.png' },
+    { id: 'boba', nama: 'Boba Brown Sugar', harga: 18000, kategori: 'minuman', img: 'boba.png' },
+    { id: 'kentang', nama: 'Kentang Goreng', harga: 12000, kategori: 'jajanan', img: 'kentang.png' }
+];
 
+const toppingOptions = [
+    { id: 'cream_cheese', nama: 'Cream Cheese', harga: 2000, img: 'top-cream.png' },
+    { id: 'boba_top', nama: 'Boba', harga: 2000, img: 'top-boba.png' },
+    { id: 'oreo_top', nama: 'Oreo', harga: 2000, img: 'top-oreo.png' },
+    { id: 'jelly', nama: 'Jelly', harga: 2000, img: 'top-jelly.png' },
+    { id: 'cincau', nama: 'Cincau', harga: 2000, img: 'top-cincau.png' }
+];
 
+// --- STATE ---
+let keranjang = [];
+let itemTerpilih = null;
+let rasaTerpilih = '';
+let toppingDipilih = [];
+let tipeMinuman = 'Susu';
+let tambahanBlender = 0;
 
+// --- RENDER MENU UTAMA ---
+function renderMenu(filter = 'semua') {
+    const container = document.getElementById('menu-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const filtered = (filter === 'semua') ? menuData : menuData.filter(m => m.kategori === filter);
+    
+    filtered.forEach(item => {
+        const qtyTampil = keranjang.filter(k => k.id === item.id).length;
+        const aksiHTML = qtyTampil > 0 ? `
+            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
+                <button onclick="hapusSatuPorsi('${item.id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold">-</button>
+                <span class="text-xs font-black w-4 text-center text-slate-800">${qtyTampil}</span>
+                <button onclick="pilihProduk('${item.id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold">+</button>
+            </div>` 
+            : `<button onclick="pilihProduk('${item.id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md uppercase">+ PESAN</button>`;
 
+        container.innerHTML += `
+            <div class="flex bg-white p-3 rounded-[32px] shadow-sm border border-slate-100 items-center mb-3">
+                <img src="${item.img}" class="w-16 h-16 rounded-2xl object-cover">
+                <div class="ml-4 flex-1">
+                    <h3 class="font-bold text-slate-800 text-sm leading-tight">${item.nama}</h3>
+                    <p class="text-[11px] text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
+                </div>
+                <div class="flex items-center ml-2">${aksiHTML}</div>
+            </div>`;
+    });
+}
 
-// Navigasi antar halaman
+// --- MODAL & TOPPING ---
+function pilihProduk(id) {
+    itemTerpilih = menuData.find(m => m.id === id);
+    if (!itemTerpilih) return;
+
+    if (itemTerpilih.id !== 'es-susu') {
+        tambahKeKeranjang(itemTerpilih.nama, itemTerpilih.harga, itemTerpilih.img, itemTerpilih.id);
+        return;
+    }
+
+    rasaTerpilih = '';
+    toppingDipilih = [];
+    tipeMinuman = 'Susu';
+    tambahanBlender = 0;
+    
+    document.getElementById('modal-topping').classList.remove('hidden');
+    const content = document.getElementById('modal-content');
+
+    content.innerHTML = `
+        <div class="flex flex-col items-center text-center mb-6">
+            <h2 class="text-xl font-black text-slate-800">${itemTerpilih.nama}</h2>
+            <p class="text-[12px] text-slate-400 mt-1">Rp ${itemTerpilih.harga.toLocaleString('id-ID')}</p>
+        </div>
+
+        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center tracking-widest text-slate-300">Tekstur Es:</p>
+        <div class="flex justify-center mb-8">
+            <button onclick="toggleBlender(this)" class="tipe-btn w-full max-w-[220px] py-4 px-6 rounded-3xl bg-slate-100 text-slate-600 text-xs font-black flex items-center justify-center gap-3 transition-all border-none shadow-sm">
+                <i class="fas fa-wind opacity-50"></i> Di Blender +1.000
+            </button>
+        </div>
+
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Geser & Pilih Rasa:</p>
+        <div class="rasa-scroll-wrapper" id="rasaWrapper">
+            ${itemTerpilih.rasa.map(r => `
+                <div class="rasa-item p-2 rounded-[24px] border-2 border-slate-100 bg-white shadow-sm flex-shrink-0">
+                    <img src="${r.foto}" class="w-full h-24 object-cover rounded-[18px] mb-2 pointer-events-none">
+                    <span class="text-[10px] font-black text-slate-700 uppercase">${r.nama}</span>
+                </div>
+            `).join('')}
+        </div>
+
+        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Topping Tambahan:</p>
+        <div class="space-y-3 mb-6">
+            ${toppingOptions.map(t => `
+                <div onclick="toggleTopping(this, '${t.id}', ${t.harga})" class="topping-item flex justify-between items-center p-3 rounded-2xl border-2 border-slate-100 cursor-pointer transition-all">
+                    <div class="flex items-center gap-3">
+                        <img src="${t.img}" class="w-10 h-10 rounded-lg object-cover">
+                        <span class="text-xs font-bold text-slate-700">${t.nama}</span>
+                    </div>
+                    <span class="text-xs font-black text-custom">+Rp ${t.harga.toLocaleString('id-ID')}</span>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="bg-slate-50 rounded-2xl p-4 mb-6 flex justify-between items-center border border-dashed border-slate-200">
+            <span class="text-[10px] font-bold text-slate-500 uppercase">Total</span>
+            <span id="live-total-harga" class="text-lg font-black text-custom">Rp ${itemTerpilih.harga.toLocaleString('id-ID')}</span>
+        </div>
+        
+        <button onclick="konfirmasiKeKeranjang()" class="w-full bg-custom text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95 transition-all">
+            Konfirmasi Pesanan
+        </button>`;
+    
+    // Aktifkan kembali deteksi scroll otomatis untuk varian rasa
+    setTimeout(initScrollDetection, 100);
+}
+
+function initScrollDetection() {
+    const wrapper = document.getElementById('rasaWrapper');
+    if (!wrapper) return;
+
+    wrapper.addEventListener('scroll', () => {
+        const items = wrapper.querySelectorAll('.rasa-item');
+        const wrapperCenter = wrapper.getBoundingClientRect().left + (wrapper.offsetWidth / 2);
+        
+        items.forEach(item => {
+            const itemCenter = item.getBoundingClientRect().left + (item.getBoundingClientRect().width / 2);
+            // Jika item berada di tengah (jarak < 60px dari pusat)
+            if (Math.abs(wrapperCenter - itemCenter) < 60) {
+                item.classList.add('is-active');
+                rasaTerpilih = item.querySelector('span').innerText;
+            } else {
+                item.classList.remove('is-active');
+            }
+        });
+    });
+    
+    // Trigger scroll sedikit agar item pertama terdeteksi aktif
+    wrapper.scrollLeft = 1;
+}
+
+function toggleBlender(el) {
+    el.classList.add('active-press');
+    setTimeout(() => el.classList.remove('active-press'), 100);
+
+    if (tipeMinuman === 'Blender') {
+        tipeMinuman = 'Susu';
+        tambahanBlender = 0;
+        el.classList.remove('active');
+    } else {
+        tipeMinuman = 'Blender';
+        tambahanBlender = 1000;
+        el.classList.add('active');
+    }
+    updateTotalModal();
+}
+
+function toggleTopping(el, id, harga) {
+    const idx = toppingDipilih.indexOf(id);
+    el.classList.add('active-press');
+    setTimeout(() => el.classList.remove('active-press'), 100);
+
+    if (idx > -1) {
+        toppingDipilih.splice(idx, 1);
+        el.classList.remove('selected-topping');
+    } else {
+        toppingDipilih.push(id);
+        el.classList.add('selected-topping');
+    }
+    updateTotalModal();
+}
+
+function updateTotalModal() {
+    let total = itemTerpilih.harga + tambahanBlender;
+    toppingDipilih.forEach(tid => {
+        const t = toppingOptions.find(o => o.id === tid);
+        if(t) total += t.harga;
+    });
+    document.getElementById('live-total-harga').innerText = "Rp " + total.toLocaleString('id-ID');
+}
+
+function konfirmasiKeKeranjang() {
+    if (!rasaTerpilih) return alert("Geser dan pilih rasa dulu ya!");
+    let namaFinal = `${itemTerpilih.nama} ${rasaTerpilih} (${tipeMinuman})`;
+    let hargaFinal = itemTerpilih.harga + tambahanBlender;
+    toppingDipilih.forEach(tid => {
+        const t = toppingOptions.find(o => o.id === tid);
+        namaFinal += ` + ${t.nama}`;
+        hargaFinal += t.harga;
+    });
+    keranjang.push({ id: itemTerpilih.id, nama: namaFinal, harga: hargaFinal, img: itemTerpilih.img });
+    tutupModal();
+    updateUI();
+    renderMenu();
+}
+
+// --- NAVIGATION & UI ---
+function filterMenu(kat) {
+    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active', 'bg-custom', 'text-white'));
+    document.getElementById('tab-' + kat).classList.add('active', 'bg-custom', 'text-white');
+    renderMenu(kat);
+}
+
+function updateUI() {
+    let total = keranjang.reduce((sum, item) => sum + item.harga, 0);
+    const footerTotal = document.getElementById('footer-total');
+    if (footerTotal) footerTotal.innerText = "Rp " + total.toLocaleString('id-ID');
+    
+    const floatingCart = document.getElementById('floating-cart');
+    // Cek halaman mana yang lagi aktif sekarang
+    const isBeranda = document.getElementById('page-beranda').classList.contains('active');
+    
+    // Tombol CUMA boleh muncul di Beranda DAN kalau ada isinya
+    if (keranjang.length > 0 && isBeranda) {
+        floatingCart.classList.remove('hidden-cart');
+    } else {
+        floatingCart.classList.add('hidden-cart');
+    }
+}
+
+function hapusSatuPorsi(id) {
+    const idx = keranjang.findLastIndex(k => k.id === id);
+    if (idx > -1) keranjang.splice(idx, 1);
+    updateUI();
+    renderMenu();
+}
+
+function tambahKeKeranjang(nama, harga, img, id) {
+    keranjang.push({ id, nama, harga, img });
+    updateUI();
+    renderMenu();
+}
+
+function tutupModal() { document.getElementById('modal-topping').classList.add('hidden'); }
+
 function bukaHalaman(pageId) {
-    // Sembunyikan semua halaman
+    // 1. Sembunyikan semua halaman
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     
-    // Tampilkan halaman yang dipilih
+    // 2. Tampilkan halaman yang dituju
     const targetPage = document.getElementById('page-' + pageId);
     if (targetPage) {
         targetPage.classList.add('active');
     }
 
+    // 3. Logika sembunyikan tombol keranjang melayang
+    const floatingCart = document.getElementById('floating-cart');
     if (pageId === 'pembayaran') {
-        // Sembunyikan tombol melayang saat di checkout
-        document.getElementById('floating-cart').classList.add('hidden-cart');
-        renderCheckout();
+        floatingCart.classList.add('hidden-cart'); // Paksa hilang agar tidak menutupi tombol bayar
+        renderCheckout(); // Ambil data pesanan untuk ditampilkan
     } else {
-        // Cek apakah tombol keranjang perlu muncul lagi saat kembali ke beranda
-        updateUI();
+        updateUI(); // Cek lagi apakah tombol perlu muncul di beranda
     }
     
     window.scrollTo(0, 0);
@@ -30,8 +280,8 @@ function renderCheckout() {
     const listContainer = document.getElementById('checkout-list');
     if (!listContainer) return;
     
-    listContainer.innerHTML = '';
-    let subtotal = 0;
+    listContainer.innerHTML = ''; // Kosongkan dulu sebelum isi baru
+    let total = 0;
 
     if (keranjang.length === 0) {
         listContainer.innerHTML = `<p class="text-center text-slate-400 py-10 text-xs">Keranjang kamu masih kosong.</p>`;
@@ -40,291 +290,33 @@ function renderCheckout() {
         return;
     }
 
-    // Kelompokkan item yang sama untuk tampilan ringkas
-    const ringkasanKeranjang = keranjang.reduce((acc, item) => {
-        const key = item.nama; // Mengelompokkan berdasarkan nama (termasuk toppingnya)
-        if (!acc[key]) {
-            acc[key] = { ...item, qty: 0 };
-        }
-        acc[key].qty += 1;
+    // Kelompokkan item yang sama biar rapi (misal: 2x Es Susu Oreo)
+    const ringkasan = keranjang.reduce((acc, item) => {
+        acc[item.nama] = acc[item.nama] || { ...item, qty: 0 };
+        acc[item.nama].qty++;
         return acc;
     }, {});
 
-    Object.values(ringkasanKeranjang).forEach((item) => {
-        const totalHargaItem = item.harga * item.qty;
-        subtotal += totalHargaItem;
+    Object.values(ringkasan).forEach(item => {
+        const subtotalItem = item.harga * item.qty;
+        total += subtotalItem;
         
         listContainer.innerHTML += `
             <div class="flex items-center bg-white p-4 rounded-[30px] shadow-sm border border-slate-100 mb-3">
-                <img src="${item.img}" class="w-14 h-14 rounded-2xl object-cover shadow-sm">
+                <img src="${item.img}" class="w-14 h-14 rounded-2xl object-cover">
                 <div class="ml-4 flex-1">
                     <h3 class="font-bold text-[11px] text-slate-800 leading-tight">${item.nama}</h3>
                     <p class="text-xs text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
                 </div>
-                <!-- Tampilan Jumlah Porsi Tanpa Tombol Hapus -->
                 <div class="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
                     <span class="text-xs font-black text-slate-700">${item.qty}x</span>
                 </div>
-            </div>
-        `;
-    });
-
-    document.getElementById('pay-subtotal').innerText = "Rp " + subtotal.toLocaleString('id-ID');
-    document.getElementById('pay-total').innerText = "Rp " + subtotal.toLocaleString('id-ID');
-}
-
-// Fungsi menghapus item dari keranjang
-function hapusItem(index) {
-    keranjang.splice(index, 1);
-    renderCheckout();
-    
-    // Jika semua item dihapus, otomatis balik ke beranda
-    if (keranjang.length === 0) {
-        setTimeout(() => {
-            bukaHalaman('beranda');
-        }, 500);
-    }
-}
-
-
-
-const menuData = [
-    { id: 'bowl', nama: 'Rice Bowl Ayam', harga: 20000, kategori: 'makanan', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150', deskripsi: 'Nasi hangat dengan ayam krispi.' },
-    { id: 'boba', nama: 'Boba Brown Sugar', harga: 15000, kategori: 'minuman', img: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=150', deskripsiTopping: 'Disajikan dalam Gelas 14 Oz dengan es batu kristal dan gula aren murni.' },
-    { id: 'kentang', nama: 'Kentang Goreng', harga: 12000, kategori: 'jajanan', img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150', deskripsi: 'Renyah dengan bumbu gurih.' }
-];
-
-const toppingOptions = [
-    { id: 'oreo', nama: 'Ekstra Oreo', harga: 3000 },
-    { id: 'boba', nama: 'Ekstra Boba', harga: 4000 },
-    { id: 'pudding', nama: 'Ekstra Pudding', harga: 5000 }
-];
-
-let keranjang = [];
-let toppingDipilih = []; // Untuk menampung sementara pilihan topping user
-let itemTerpilih = null;
-
-function renderMenu(filter = 'semua') {
-    const container = document.getElementById('menu-container');
-    if(!container) return;
-    container.innerHTML = '';
-    
-    const filtered = filter === 'semua' ? menuData : menuData.filter(m => m.kategori === filter);
-    
-    filtered.forEach(item => {
-        // Menghitung berapa porsi produk ini yang ada di keranjang berdasarkan ID
-        const qtyTampil = keranjang.filter(k => k.id === item.id).length;
-
-        // Logika Tombol: Jika 0 tampilkan "+ PESAN", jika > 0 tampilkan "- QTY +"
-        const aksiHTML = qtyTampil > 0 ? `
-            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
-                <button onclick="hapusSatuPorsi('${item.id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold active:scale-90 transition-transform">-</button>
-                <span class="text-xs font-black w-4 text-center text-slate-800">${qtyTampil}</span>
-                <button onclick="pilihProduk('${item.id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold active:scale-90 transition-transform">+</button>
-            </div>` 
-            : `<button onclick="pilihProduk('${item.id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md active:scale-95 transition-all uppercase tracking-wider">+ PESAN</button>`;
-
-        container.innerHTML += `
-            <div class="flex bg-white p-3 rounded-[32px] shadow-sm border border-slate-100 items-center mb-3 transition-all">
-                <img src="${item.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm">
-                <div class="ml-4 flex-1">
-                    <h3 class="font-bold text-slate-800 text-sm leading-tight">${item.nama}</h3>
-                    <p class="text-[11px] text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
-                </div>
-                <div class="flex items-center ml-2">${aksiHTML}</div>
             </div>`;
     });
-}
-// LOGIKA PILIH PRODUK
-function pilihProduk(id) {
-    itemTerpilih = menuData.find(m => m.id === id);
-    if (itemTerpilih.kategori === 'minuman') {
-        toppingDipilih = []; // Reset pilihan topping
-        bukaModalTopping();
-    } else {
-        tambahKeKeranjang(itemTerpilih.nama, itemTerpilih.harga, itemTerpilih.img);
-    }
+
+    // Update angka total di bagian bawah halaman pembayaran
+    document.getElementById('pay-subtotal').innerText = "Rp " + total.toLocaleString('id-ID');
+    document.getElementById('pay-total').innerText = "Rp " + total.toLocaleString('id-ID');
 }
 
-function bukaModalTopping() {
-    const modal = document.getElementById('modal-topping');
-    const content = document.getElementById('modal-content');
-    toppingDipilih = []; 
-
-    content.innerHTML = `
-        <div class="flex flex-col items-center text-center mb-6">
-            <img src="${itemTerpilih.img}" class="modal-img-medium shadow-xl mb-4">
-            <h2 class="text-xl font-black text-slate-800">${itemTerpilih.nama}</h2>
-            <p class="text-[12px] text-slate-400 mt-2 px-6 leading-relaxed">${itemTerpilih.deskripsiTopping || 'Gelas 14 oz dengan es kristal'}</p>
-        </div>
-
-        <div class="space-y-3 mb-6">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tambahkan Topping:</p>
-            ${toppingOptions.map(t => `
-                <div onclick="toggleTopping(this, '${t.id}', ${t.harga})" class="topping-item flex justify-between items-center p-4 rounded-2xl border-2 border-slate-100 cursor-pointer transition-all">
-                    <div class="flex items-center">
-                        <div class="check-box w-5 h-5 border-2 border-slate-200 rounded-full mr-3 flex items-center justify-center transition-all">
-                            <i class="fas fa-check text-[10px] text-white opacity-0"></i>
-                        </div>
-                        <span class="text-xs font-bold text-slate-700 name-topping">${t.nama}</span>
-                    </div>
-                    <span class="text-xs font-black text-custom">+Rp ${t.harga.toLocaleString('id-ID')}</span>
-                </div>
-            `).join('')}
-        </div>
-
-        <div class="bg-slate-50 rounded-2xl p-4 mb-6 flex justify-between items-center border border-dashed border-slate-200">
-            <span class="text-[10px] font-bold text-slate-500 uppercase">Harga Porsi Ini</span>
-            <span id="live-total-harga" class="text-lg font-black text-custom">Rp ${itemTerpilih.harga.toLocaleString('id-ID')}</span>
-        </div>
-
-        <button onclick="konfirmasiKeKeranjang()" class="w-full bg-custom text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-            Konfirmasi & Tambah Porsi
-        </button>
-    `;
-    modal.classList.remove('hidden');
-}
-function toggleTopping(el, toppingId, hargaTopping) {
-    const index = toppingDipilih.indexOf(toppingId);
-    const checkBox = el.querySelector('.check-box');
-    const checkIcon = el.querySelector('.fa-check');
-    const nameText = el.querySelector('.name-topping');
-
-    if (index > -1) {
-        // JIKA BATAL PILIH
-        toppingDipilih.splice(index, 1);
-        el.style.backgroundColor = "transparent";
-        el.style.borderColor = "#f1f5f9"; // slate-100
-        checkBox.style.backgroundColor = "transparent";
-        checkBox.style.borderColor = "#e2e8f0"; // slate-200
-        checkIcon.style.opacity = "0";
-        nameText.style.color = "#334155"; // slate-700
-    } else {
-        // JIKA DIPILIH
-        toppingDipilih.push(toppingId);
-        el.style.backgroundColor = "#541161"; // Warna custom kamu
-        el.style.borderColor = "#541161";
-        checkBox.style.backgroundColor = "#ffffff";
-        checkBox.style.borderColor = "#ffffff";
-        checkIcon.style.opacity = "1";
-        checkIcon.style.color = "#541161";
-        nameText.style.color = "#ffffff";
-    }
-
-    // Update Harga Real-time di Modal
-    let totalSementera = itemTerpilih.harga;
-    toppingDipilih.forEach(tid => {
-        const t = toppingOptions.find(opt => opt.id === tid);
-        totalSementera += t.harga;
-    });
-    document.getElementById('live-total-harga').innerText = "Rp " + totalSementera.toLocaleString('id-ID');
-}
-// KONFIRMASI MASUK KERANJANG
-function konfirmasiKeKeranjang() {
-    let namaTopping = "";
-    let hargaTambahan = 0;
-
-    toppingDipilih.forEach(tid => {
-        const t = toppingOptions.find(opt => opt.id === tid);
-        namaTopping += ` + ${t.nama}`;
-        hargaTambahan += t.harga;
-    });
-
-    const namaFinal = itemTerpilih.nama + (namaTopping || " (Original)");
-    const hargaFinal = itemTerpilih.harga + hargaTambahan;
-
-    tambahKeKeranjang(namaFinal, hargaFinal, itemTerpilih.img);
-    tutupModal();
-}
-
-function tambahKeKeranjang(nama, harga, img) {
-    // Pastikan itemTerpilih.id ikut tersimpan
-    keranjang.push({ 
-        id: itemTerpilih.id, 
-        nama: nama, 
-        harga: harga, 
-        img: img 
-    });
-    
-    updateUI(); // Mengupdate total harga di bawah
-    renderMenu(document.querySelector('.category-tab.active')?.id.replace('tab-', '') || 'semua'); // Refresh tombol porsi
-}
-
-function updateUI() {
-    let total = 0;
-    keranjang.forEach(item => total += item.harga);
-    document.getElementById('footer-total').innerText = "Rp " + total.toLocaleString('id-ID');
-    
-    if (keranjang.length > 0) document.getElementById('floating-cart').classList.remove('hidden-cart');
-}
-
-function tutupModal() {
-    document.getElementById('modal-topping').classList.add('hidden');
-}
-
-// Inisialisasi awal
-document.addEventListener('DOMContentLoaded', () => renderMenu());
-
-
-function hapusSatuPorsi(itemId) {
-    // Mencari index terakhir dari produk dengan ID tersebut
-    const index = keranjang.findLastIndex(item => item.id === itemId);
-    
-    if (index > -1) {
-        keranjang.splice(index, 1); // Hapus 1 porsi saja
-        updateUI();
-        // Refresh tampilan menu agar angka berubah atau kembali ke tombol "+ PESAN"
-        renderMenu(document.querySelector('.category-tab.active')?.id.replace('tab-', '') || 'semua');
-    }
-}
-
-
-function prosesPesanan() {
-    const namaUser = document.getElementById('namaPenerima').value;
-    const alamatUser = document.getElementById('alamatLengkap').value;
-
-    if (!namaUser || !alamatUser) {
-        alert("Tolong isi nama dan alamat pengiriman dulu ya!");
-        return;
-    }
-
-    if (keranjang.length === 0) {
-        alert("Keranjang kamu kosong!");
-        return;
-    }
-
-    // Mengelompokkan item yang sama untuk pesan WA yang rapi
-    const ringkasan = keranjang.reduce((acc, item) => {
-        const key = item.nama;
-        if (!acc[key]) {
-            acc[key] = { harga: item.harga, qty: 0 };
-        }
-        acc[key].qty += 1;
-        return acc;
-    }, {});
-
-    let pesanWA = `*HALO KEDAI MOCOCO*\n`;
-    pesanWA += `Saya mau pesan dengan detail berikut:\n\n`;
-    pesanWA += `*Data Pengiriman:*\n`;
-    pesanWA += `Nama: ${namaUser}\n`;
-    pesanWA += `Alamat: ${alamatUser}\n\n`;
-    pesanWA += `*Daftar Pesanan:*\n`;
-
-    let totalKeseluruhan = 0;
-    Object.keys(ringkasan).forEach((namaProduk, index) => {
-        const detail = ringkasan[namaProduk];
-        const subTotal = detail.harga * detail.qty;
-        totalKeseluruhan += subTotal;
-        pesanWA += `${index + 1}. ${namaProduk} (${detail.qty}x) = Rp ${subTotal.toLocaleString('id-ID')}\n`;
-    });
-
-    pesanWA += `\n*Total Belanja:* Rp ${totalKeseluruhan.toLocaleString('id-ID')}\n`;
-    pesanWA += `\n_Mohon info biaya ongkir ke alamat saya ya, Kak. Terima kasih!_`;
-
-    // Encode pesan untuk URL WhatsApp
-    const pesanEncoded = encodeURIComponent(pesanWA);
-    const nomorWA = "6281228081342"; // Ganti dengan nomor WA kedaimococo kamu
-    
-    // Buka WhatsApp di tab baru
-    window.open(`https://wa.me/${nomorWA}?text=${pesanEncoded}`, '_blank');
-}
+document.addEventListener('DOMContentLoaded', () => renderMenu('semua'));
