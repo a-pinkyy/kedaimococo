@@ -31,7 +31,7 @@ const toppingOptions = [
     { id: 'cincau', nama: 'Cincau', harga: 2000, img: 'top-cincau.png' }
 ];
 
-// --- STATE ---
+// --- STATE UTAMA ---
 let keranjang = [];
 let itemTerpilih = null;
 let rasaTerpilih = '';
@@ -39,7 +39,7 @@ let toppingDipilih = [];
 let tipeMinuman = 'Susu';
 let tambahanBlender = 0;
 
-// --- RENDER MENU UTAMA ---
+// --- RENDER MENU (HANYA JALAN SEKALI / GANTI KATEGORI) ---
 function renderMenu(filter = 'semua') {
     const container = document.getElementById('menu-container');
     if (!container) return;
@@ -48,15 +48,9 @@ function renderMenu(filter = 'semua') {
     const filtered = (filter === 'semua') ? menuData : menuData.filter(m => m.kategori === filter);
     
     filtered.forEach(item => {
-        const qtyTampil = keranjang.filter(k => k.id === item.id).length;
-        const aksiHTML = qtyTampil > 0 ? `
-            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
-                <button onclick="hapusSatuPorsi('${item.id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold">-</button>
-                <span class="text-xs font-black w-4 text-center text-slate-800">${qtyTampil}</span>
-                <button onclick="pilihProduk('${item.id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold">+</button>
-            </div>` 
-            : `<button onclick="pilihProduk('${item.id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md uppercase">+ PESAN</button>`;
-
+        // Ambil qty dari keranjang untuk item ini
+        const qty = keranjang.filter(k => k.id === item.id).length;
+        
         container.innerHTML += `
             <div class="flex bg-white p-3 rounded-[32px] shadow-sm border border-slate-100 items-center mb-3">
                 <img src="${item.img}" class="w-16 h-16 rounded-2xl object-cover">
@@ -64,11 +58,52 @@ function renderMenu(filter = 'semua') {
                     <h3 class="font-bold text-slate-800 text-sm leading-tight">${item.nama}</h3>
                     <p class="text-[11px] text-custom font-black mt-1">Rp ${item.harga.toLocaleString('id-ID')}</p>
                 </div>
-                <div class="flex items-center ml-2">${aksiHTML}</div>
+                <div class="flex items-center ml-2" id="aksi-${item.id}">
+                    ${renderTombolAksi(item.id, qty)}
+                </div>
             </div>`;
     });
 }
 
+// Fungsi pembantu untuk gambar tombol biar gak render ulang seluruh menu
+function renderTombolAksi(id, qty) {
+    if (qty > 0) {
+        return `
+            <div class="flex items-center gap-3 bg-slate-100 rounded-full p-1 border border-slate-200">
+                <button onclick="hapusSatuPorsi('${id}')" class="w-8 h-8 rounded-full bg-white text-custom shadow-sm font-bold">-</button>
+                <span class="text-xs font-black w-4 text-center text-slate-800">${qty}</span>
+                <button onclick="pilihProduk('${id}')" class="w-8 h-8 rounded-full bg-custom text-white shadow-sm font-bold">+</button>
+            </div>`;
+    } else {
+        return `<button onclick="pilihProduk('${id}')" class="bg-custom text-white px-5 py-2.5 rounded-2xl text-[10px] font-black shadow-md uppercase">+ PESAN</button>`;
+    }
+}
+
+// --- TAMBAH & HAPUS (TANPA KEDIP) ---
+function tambahKeKeranjang(nama, harga, img, id) {
+    keranjang.push({ id, nama, harga, img });
+    updateUI();
+    
+    // UPDATE HANYA TOMBOLNYA SAJA, GAK USAH RENDER ULANG SEMUA MENU
+    const targetAksi = document.getElementById(`aksi-${id}`);
+    if (targetAksi) {
+        const qty = keranjang.filter(k => k.id === id).length;
+        targetAksi.innerHTML = renderTombolAksi(id, qty);
+    }
+}
+
+function hapusSatuPorsi(id) {
+    const idx = keranjang.findLastIndex(k => k.id === id);
+    if (idx > -1) keranjang.splice(idx, 1);
+    updateUI();
+    
+    // UPDATE HANYA TOMBOLNYA SAJA
+    const targetAksi = document.getElementById(`aksi-${id}`);
+    if (targetAksi) {
+        const qty = keranjang.filter(k => k.id === id).length;
+        targetAksi.innerHTML = renderTombolAksi(id, qty);
+    }
+}
 // --- MODAL & TOPPING ---
 function pilihProduk(id) {
     itemTerpilih = menuData.find(m => m.id === id);
@@ -253,26 +288,18 @@ function tambahKeKeranjang(nama, harga, img, id) {
 }
 
 function tutupModal() { document.getElementById('modal-topping').classList.add('hidden'); }
-
+// --- NAVIGASI HALAMAN (FIX JARAK & TOMBOL WA) ---
 function bukaHalaman(pageId) {
-    // 1. Sembunyikan semua halaman
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    
-    // 2. Tampilkan halaman yang dituju
     const targetPage = document.getElementById('page-' + pageId);
-    if (targetPage) {
-        targetPage.classList.add('active');
-    }
+    if (targetPage) targetPage.classList.add('active');
 
-    // 3. Logika sembunyikan tombol keranjang melayang
-    const floatingCart = document.getElementById('floating-cart');
     if (pageId === 'pembayaran') {
-        floatingCart.classList.add('hidden-cart'); // Paksa hilang agar tidak menutupi tombol bayar
-        renderCheckout(); // Ambil data pesanan untuk ditampilkan
+        document.getElementById('floating-cart').classList.add('hidden-cart');
+        renderCheckout();
     } else {
-        updateUI(); // Cek lagi apakah tombol perlu muncul di beranda
+        updateUI();
     }
-    
     window.scrollTo(0, 0);
 }
 
