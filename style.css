@@ -69,17 +69,13 @@ a.flex:hover,
     transition: all 0.2s ease;
 }
 
-/* Efek saat topping diklik */
-.topping-selected {
+.topping-item.selected-topping {
     background-color: #541161 !important;
     border-color: #541161 !important;
-    transform: scale(0.98);
 }
-
-.topping-selected span {
+.topping-item.selected-topping span {
     color: white !important;
 }
-
 /* Animasi masuk modal */
 #modal-topping:not(.hidden) .bg-white {
     animation: slideUp 0.3s ease-out;
@@ -180,3 +176,142 @@ a.flex:hover,
     font-weight: 900;
     color: #541161;
 }
+
+/* Ukuran kotak rasa agar konsisten */
+.rasa-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #f8fafc;
+}
+
+/* Saat rasa dipilih, beri warna ungu pada border-nya */
+.rasa-item.selected {
+    border-color: #541161 !important;
+    background-color: #fdf4ff !important;
+}
+
+.rasa-item.selected span {
+    color: #541161 !important;
+}
+
+/* Container pembungkus rasa */
+.rasa-scroll-wrapper {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 20px 50%; /* Padding 50% supaya item bisa benar-benar di tengah */
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    align-items: center;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rasa-scroll-wrapper::-webkit-scrollbar {
+    display: none; /* Hilangkan scrollbar biar bersih */
+}
+
+/* Item rasa default (kecil) */
+.rasa-item {
+    scroll-snap-align: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: scale(0.85);
+    opacity: 0.5;
+    min-width: 110px;
+    flex-shrink: 0;
+}
+
+/* Item rasa saat di tengah (besar & fokus) */
+.rasa-item.is-active {
+    transform: scale(1.15);
+    opacity: 1;
+    border-color: #541161; /* Warna ungu custom kamu */
+    background-color: #f5f3ff;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Efek Tombol Susu & Blender */
+.tipe-btn {
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* Transisi super smooth */
+    position: relative;
+    cursor: pointer;
+}
+
+/* Efek pas kursor lewat (Hover) */
+.tipe-btn:hover:not(.active) {
+    background-color: #f5f3ff !important;
+    transform: translateY(-2px);
+    border-color: #54116180 !important;
+}
+
+.tipe-btn.active {
+    transform: scale(1.02) !important;
+    background-color: #541161 !important;
+    color: white !important;
+    border-color: #541161 !important;
+    box-shadow: 0 8px 15px -5px rgba(84, 17, 97, 0.4) !important;
+}
+
+/* Efek List Topping */
+.topping-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid #f1f5f9; /* Border halus awal */
+}
+
+/* Hover Topping: Biar kelihatan 'hidup' pas dilewati */
+.topping-item:hover {
+    background-color: #fdf4ff;
+    border-color: #54116140;
+    transform: translateX(5px); /* Geser dikit ke kanan biar asik */
+}
+
+/* Saat Topping Dipilih (Tanpa Centang) */
+.topping-item.selected-topping {
+    background-color: #fdf4ff !important;
+    border-color: #541161 !important;
+    box-shadow: 0 4px 12px rgba(84, 17, 97, 0.1);
+}
+
+.topping-item.selected-topping span {
+    color: #541161 !important;
+    font-weight: 800 !important;
+}
+
+/* Animasi mendarat (Bounce) pas diklik */
+.active-press {
+    transform: scale(0.95) !important;
+}
+
+/* Tombol Blender Tanpa Garis */
+.tipe-btn {
+    border: none !important; /* Menghilangkan garis */
+    outline: none !important;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Shadow tipis biar elegan */
+}
+
+/* Efek pas kursor lewat */
+.tipe-btn:hover:not(.active) {
+    background-color: #f3e8ff !important; /* Warna ungu sangat muda */
+    transform: translateY(-2px);
+    color: #541161 !important;
+}
+
+/* Saat aktif (Dipilih) */
+.tipe-btn.active {
+    background-color: #541161 !important;
+    color: white !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 10px 20px -5px rgba(84, 17, 97, 0.4) !important;
+}
+
+/* Efek tekan */
+.active-press {
+    transform: scale(0.95) !important;
+}
+
+
+
+
